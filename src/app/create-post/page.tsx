@@ -17,7 +17,9 @@ export default function CreatePostPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!title || !description) {
+    setError(null) // Clear previous errors
+
+    if (!title.trim() || !description.trim()) {
       setError('Title and description are required.')
       return
     }
@@ -28,22 +30,24 @@ export default function CreatePostPage() {
       const user = auth.currentUser
       if (!user) {
         setError('You must be logged in to create a post.')
+        setIsLoading(false)
         return
       }
 
       await addDoc(collection(db, 'posts'), {
-        title,
-        description,
-        author: user.email,
+        title: title.trim(),
+        description: description.trim(),
+        authorId: user.uid, // ✅ Store user ID
+        authorName: user.displayName || user.email, // ✅ Store username or email
         createdAt: new Date(),
         votes: 0,
-        responses: []
+        responses: 0 // Store as number for counting
       })
 
-      router.push('/')
+      router.push('/') // Redirect after successful post creation
     } catch (error) {
-      setError('Failed to create post. Try again.')
       console.error('Error creating post:', error)
+      setError('Failed to create post. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -69,7 +73,7 @@ export default function CreatePostPage() {
           onChange={(e) => setDescription(e.target.value)}
           required
         />
-        <Button type="submit" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading} className="w-full">
           {isLoading ? 'Submitting...' : 'Create Post'}
         </Button>
       </form>

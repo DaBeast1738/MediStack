@@ -1,82 +1,100 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ThumbsUp, MessageCircle } from 'lucide-react'
+import { ThumbsUp, MessageCircle, Trash } from 'lucide-react'
 import Link from 'next/link'
-
-interface Response {
-  id: number
-  doctor: string
-  response: string
-  votes: number
-  isVerified: boolean
-}
+import { db, auth } from '@/lib/firebase'
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore'
 
 interface Post {
-  id: number
+  id: string
   title: string
   description: string
   votes: number
-  responses: Response[]
+  responses: number
+  authorName: string
+  authorId: string
 }
 
-interface PostListProps {
-  posts?: Post[]
-}
+export default function PostList() {
+  const [posts, setPosts] = useState<Post[]>([])
+  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(null)
 
-export default function PostList({ posts = [] }: PostListProps) {
-  const [postVotes, setPostVotes] = useState<{ [key: number]: number }>(
-    Object.fromEntries(posts.map(post => [post.id, post.votes]))
-  )
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(setUser)
+    return () => unsubscribe()
+  }, [])
 
-  const handleUpvote = (postId: number) => {
-    setPostVotes(prev => ({
-      ...prev,
-      [postId]: (prev[postId] || 0) + 1
-    }))
+  useEffect(() => {
+    async function fetchPosts() {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'posts'))
+        const fetchedPosts = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Post[]
+        setPosts(fetchedPosts)
+      } catch (error) {
+        console.error('Error fetching posts:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchPosts()
+  }, [])
+
+  async function handleDelete(postId: string) {
+    if (!confirm("Are you sure you want to delete this post?")) return
+    try {
+      await deleteDoc(doc(db, 'posts', postId))
+      setPosts(posts.filter(post => post.id !== postId)) // Update UI
+    } catch (error) {
+      console.error('Error deleting post:', error)
+    }
   }
 
   return (
     <div className="space-y-4">
-      {posts.length === 0 ? (
-        <p className="text-gray-500 text-center">No posts available.</p>
-      ) : (
-        posts.map(post => (
-          <Card key={post.id} className="w-full">
-            <CardHeader>
-              <CardTitle className="text-xl hover:text-blue-600 transition">
-                <Link href={`/posts/${post.id}`}>{post.title}</Link>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-4">{post.description}</p>
-              <div className="flex items-center space-x-4 mb-6">
-                {/* Upvote Button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleUpvote(post.id)}
-                >
-                  <ThumbsUp className="w-4 h-4 mr-2" />
-                  {postVotes[post.id]}
-                </Button>
-
-                {/* Response Count */}
-                <span className="text-sm text-gray-500">
-                  <MessageCircle className="w-4 h-4 inline mr-1" />
-                  {post.responses.length} responses
-                </span>
-              </div>
-
-              {/* View Discussion Button */}
-              <Link href={`/posts/${post.id}`}>
-                <Button variant="default" size="sm">View Discussion</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ))
+      {loading ? <p>Loading posts...</p> : (
+        posts.length === 0 ? <p>No posts available.</p> : (
+          posts.map(post => (
+            <Card key={post.id} className="w-full">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="text-xl hover:text-blue-600 transition">
+                      <Link href={`/posts/${post.id}`}>{post.title}</Link>
+                    </CardTitle>
+                    <p className="text-sm text-gray-500">By {post.authorName}</p>
+                  </div>
+                  {user?.uid === post.authorId && (
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(post.id)}>
+                      <Trash className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-4">{post.description}</p>
+                <div className="flex items-center space-x-4">
+                  <Button variant="outline" size="sm">
+                    <ThumbsUp className="w-4 h-4 mr-2" /> {post.votes}
+                  </Button>
+                  <span className="text-sm text-gray-500">
+                    <MessageCircle className="w-4 h-4 inline mr-1" />
+                    {post.responses} responses
+                  </span>
+                </div>
+                <Link href={`/posts/${post.id}`}>
+                  <Button variant="default" size="sm" className="mt-2">View Discussion</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ))
+        )
       )}
     </div>
   )
