@@ -1,0 +1,23 @@
+[
+  {
+    "doctorId": "doctorA",
+    "submissionId": "sub123",
+    "confirmedDiagnosis": "Flu",
+    "confidence": 0.92,
+    "votes": []
+  },
+  {
+    "doctorId": "doctorB",
+    "submissionId": "sub456",
+    "confirmedDiagnosis": "Cold",
+    "confidence": 0.85,
+    "votes": []
+  },
+  {
+    "doctorId": "doctorC",
+    "submissionId": "sub789",
+    "confirmedDiagnosis": "COVID-19",
+    "confidence": 0.95,
+    "votes": []
+  }
+]

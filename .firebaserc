@@ -1,0 +1,9 @@
+{
+  "projects": {
+    "default": "medistack-bff4e",
+    "medistacktrue": "medistack-bff4e",
+    "medistack": "medistack-bff4e"
+  },
+  "targets": {},
+  "etags": {}
+}

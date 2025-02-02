@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symptom Heatmap</title>
+    <script defer src="scripts/drawHeatmap.js"></script>
+    <style>
+        body { text-align: center; }
+        canvas { position: absolute; top: 0; left: 0; }
+    </style>
+</head>
+<body>
+    <h1>Symptom Heatmap</h1>
+    <div style="position: relative;">
+        <img id="body-image" src="body_heatmap.png" width="400">
+        <canvas id="heatmap" width="400" height="600"></canvas>
+    </div>
+</body>
+</html>
