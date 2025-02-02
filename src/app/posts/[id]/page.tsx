@@ -6,7 +6,7 @@ import { db, auth } from '@/lib/firebase'
 import { doc, getDoc, collection, getDocs, addDoc, query, orderBy } from 'firebase/firestore'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { format } from 'date-fns' // ✅ Formats timestamps
+import { format } from 'date-fns'
 
 export default function PostDetailPage() {
   const { id } = useParams()
@@ -15,7 +15,6 @@ export default function PostDetailPage() {
   const [newComment, setNewComment] = useState('')
   const [loading, setLoading] = useState(true)
 
-  // ✅ Place this `useEffect` inside the `PostDetailPage` component
   useEffect(() => {
     async function fetchPost() {
       try {
@@ -27,7 +26,7 @@ export default function PostDetailPage() {
           console.error('Post not found')
         }
 
-        // ✅ Fetch comments with timestamps
+        // Fetch comments
         const commentsRef = query(collection(db, 'posts', id, 'comments'), orderBy('createdAt', 'asc'))
         const commentsSnap = await getDocs(commentsRef)
         setComments(commentsSnap.docs.map(doc => ({
@@ -43,7 +42,7 @@ export default function PostDetailPage() {
     }
 
     fetchPost()
-  }, [id]) // ✅ Dependency array: runs when `id` changes
+  }, [id])
 
   async function addComment() {
     if (!newComment.trim()) return
@@ -77,41 +76,50 @@ export default function PostDetailPage() {
     }
   }
 
-  if (loading) return <p>Loading...</p>
-  if (!post) return <p>Post not found.</p>
+  if (loading) return <p className="text-center text-lg">Loading...</p>
+  if (!post) return <p className="text-center text-lg text-red-500">Post not found.</p>
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold">{post.title}</h1>
-      <p className="text-gray-700 mt-4">{post.description}</p>
+    <div className="max-w-4xl mx-auto px-6 py-8">
+      {/* Post Header */}
+      <div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200">
+        <h1 className="text-3xl font-bold text-gray-800">{post.title}</h1>
+        <p className="text-gray-500 mt-2 text-sm">By {post.authorName}</p>
+        <p className="text-gray-700 mt-4">{post.description}</p>
+      </div>
 
-      {/* Comments Section */}
-      <div className="mt-6 bg-white shadow-md rounded-lg p-6 border">
-        <h2 className="text-xl font-semibold mb-2">Discussion</h2>
+      {/* Comment Section */}
+      <div className="mt-8 bg-gray-50 shadow-lg rounded-lg p-6 border">
+        <h2 className="text-2xl font-semibold mb-4 text-gray-700">Discussion</h2>
 
         {/* Comment Input */}
         <Textarea
           placeholder="Write a comment..."
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
-          className="mb-2 border-gray-300"
+          className="mb-4 border border-gray-300 rounded-lg p-3 text-gray-700"
         />
-        <Button onClick={addComment} disabled={!newComment.trim()} className="mt-2">Add Comment</Button>
+        <Button onClick={addComment} disabled={!newComment.trim()} className="mt-2 w-full">Add Comment</Button>
 
         {/* Comment List */}
-        <div className="mt-6 space-y-3">
+        <div className="mt-6 space-y-4">
           {comments.length === 0 ? (
-            <p className="text-gray-500">No comments yet.</p>
+            <p className="text-gray-500">No comments yet. Be the first to comment!</p>
           ) : (
             comments.map(comment => (
-              <div key={comment.id} className="p-4 border border-gray-200 rounded-md shadow-sm bg-gray-50">
-                <div className="flex justify-between items-center">
-                  <p className="font-semibold text-blue-600">{comment.authorName || "Anonymous"}</p>
-                  <p className="text-sm text-gray-500">
-                    {format(comment.createdAt, "MMMM dd, yyyy • hh:mm a")}
-                  </p>
+              <div key={comment.id} className="p-4 border border-gray-200 rounded-lg shadow-sm bg-white flex flex-col">
+                <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 font-bold">
+                    {comment.authorName ? comment.authorName.charAt(0).toUpperCase() : "?"}
                 </div>
-                <p className="mt-2 text-gray-700">{comment.text}</p>
+                  <div>
+                    <p className="font-semibold text-blue-600">{comment.authorName || "Anonymous"}</p>
+                    <p className="text-sm text-gray-500">
+                      {format(comment.createdAt, "MMMM dd, yyyy • hh:mm a")}
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-3 text-gray-800">{comment.text}</p>
               </div>
             ))
           )}
